@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      overflow: hidden;
+      font-family: Helvetica;
+      font-weight: bold;
+      text-align: center;
+      margin: 50px;
+    }
+
+    #category {
+      font-family: sans-serif;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #grid {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+
+    .cell {
+      width: 160px;
+      height: 50px;
+      border: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: not-allowed;
+      position: relative;
+      margin: auto;
+      transition: background-color 0.5s ease-in-out;
+    }
+
+    .flipped {
+      background-color: #8cff8c;
+    }
+
+    .correct-guess {
+      background-color: #8cff8c;
+      color: white;
+    }
+
+    .remaining-guess {
+      background-color: #ccc;
+      color: #333;
+    }
+
+    #guessContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #guessInput {
+      font-family: Helvetica, sans-serif;
+      width: 200px;
+      height: 40px;
+      font-size: 16px;
+      padding: 10px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 2px;
+    }
+
+    #submitGuess {
+      font-family: Helvetica, sans-serif;
+      width: 200px;
+      height: 40px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #submitGuess:hover {
+      background-color: #45a049;
+    }
+
+    #shareButton {
+      font-family: Helvetica, sans-serif;
+      width: 200px;
+      height: 40px;
+      font-size: 16px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background-color 0.3s ease;
+    }
+
+    #shareButton:hover {
+      background-color: #2980b9;
+    }
+  </style>
+  <title>Hootles</title>
+</head>
+<body>
+  <center><h1><img src="title.png"></h1></center><br>
+  <div id="category"> <span id="categoryName"></span></div>
+
+  <div id="game-container">
+    <div id="grid"></div>
+    <div id="guessContainer">
+      <input type="text" id="guessInput" pattern="[A-Za-z\s]+" maxlength="20">
+      <button id="submitGuess" onclick="makeGuess()">SUBMIT</button>
+      <button id="shareButton" onclick="shareGame()">SHARE</button>
+    </div>
+  </div>
+
+  <script>
+    // Initialize variables
+    let grid = document.getElementById('grid');
+    let currentCategory;
+    let flippedCells = 0;
+    let completeCounter = 0;
+
+    // Function to randomly select a category
+    function selectCategory() {
+      const categories = [
+        { name: "Scary Things", words: ["SPIDER", "HEIGHTS", "SNAKES", "DARKNESS", "CLOWNS", "HORROR"] },
+        { name: "Things You Love", words: ["ANIMALS", "FAMILY", "FRIENDS", "COMPLIMENTS", "MONEY", "LIFE"] },
+        { name: "Bad Smells", words: ["SOCKS", "SWEAT", "TRASH", "GARBAGE", "SKUNK", "SMOKE"] },
+        { name: "Good Smells", words: ["FLOWERS", "CANDLES", "SOAP", "SHAMPOO", "COFFEE", "FOOD"] },
+        { name: "Things You Play", words: ["SPORTS", "GAMES", "MUSIC", "INSTRUMENT", "HOOKY", "VIDEOS"] },
+        { name: "Things You Want", words: ["MONEY", "FOOD", "SLEEP", "SHELTER", "LOVE", "PEACE"] }
+      ];
+
+      return categories[Math.floor(Math.random() * categories.length)];
+    }
+
+    // Function to create the grid and assign target words to cells
+    function createGrid() {
+      currentCategory = selectCategory();
+      document.getElementById('categoryName').innerText = currentCategory.name;
+
+      currentCategory.words.forEach((word) => {
+        let cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.dataset.targetWord = word;
+        cell.innerText = '?';
+        grid.appendChild(cell);
+      });
+    }
+
+    // Function to reveal a cell
+    function revealCell(cell) {
+      if (cell.classList.contains('flipped')) return;
+
+      cell.classList.add('flipped');
+      cell.innerText = cell.dataset.targetWord;
+      flippedCells++;
+
+      if (flippedCells === currentCategory.words.length) {
+        alert('Congratulations! You completed the quiz in the category: ' + currentCategory.name);
+        completeCounter++;
+        resetGame();
+      }
+    }
+
+    // Function to handle the player's guess
+    function makeGuess() {
+      const guessInput = document.getElementById('guessInput');
+
+      if (guessInput.value === '') {
+        alert('Please enter a guess.');
+        return;
+      }
+
+      const playerGuess = guessInput.value.toUpperCase();
+
+      for (let cell of grid.children) {
+        const targetWord = cell.dataset.targetWord.toUpperCase();
+        if (targetWord.includes(playerGuess)) {
+          revealCell(cell);
+          guessInput.value = '';
+          return;
+        }
+      }
+    }
+
+    // Function to reset the game
+    function resetGame() {
+      grid.innerHTML = '';
+      flippedCells = 0;
+      createGrid();
+    }
+
+    // Function to share the game status
+    function shareGame() {
+      let gameStatus = '';
+      for (let cell of grid.children) {
+        const targetWord = cell.dataset.targetWord.toUpperCase();
+        if (cell.classList.contains('flipped')) {
+          gameStatus += `🟩 ${targetWord}\n`;
+        } else {
+          gameStatus += `🟨 ?\n`;
+        }
+      }
+
+      gameStatus += `\nCategory: ${currentCategory.name}`;
+      gameStatus += `\nGames Completed: ${completeCounter}`;
+
+      navigator.clipboard.writeText(gameStatus).then(() => {
+        alert('Game status copied to clipboard!');
+      }).catch((error) => {
+        console.error('Unable to copy game status', error);
+      });
+    }
+
+    // Initial setup
+    createGrid();
+
+    // Automatically focus on the guess input box
+    const guessInput = document.getElementById('guessInput');
+    guessInput.focus();
+
+    // Add event listener for "Enter" key press
+    guessInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        makeGuess();
+      }
+    });
+  </script>
+</body>
+</html>
